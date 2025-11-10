@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   mongo:
@@ -11,7 +11,7 @@ services:
     volumes:
       - mongo_data:/data/db
     ports:
-      - "27017:27017"
+      - '27017:27017'
     networks:
       - wallet_net
 
@@ -20,7 +20,7 @@ services:
     container_name: wallet-mailhog
     restart: unless-stopped
     ports:
-      - "8025:8025"
+      - '8025:8025'
     networks:
       - wallet_net
 
@@ -41,7 +41,7 @@ services:
       - mongo
       - mailhog
     ports:
-      - "${WALLET_DB_PORT}:${WALLET_DB_PORT}"
+      - '${WALLET_DB_PORT}:${WALLET_DB_PORT}'
     networks:
       - wallet_net
 
@@ -58,7 +58,7 @@ services:
     depends_on:
       - wallet-db
     ports:
-      - "${WALLET_API_PORT}:${WALLET_API_PORT}"
+      - '${WALLET_API_PORT}:${WALLET_API_PORT}'
     networks:
       - wallet_net
 
@@ -69,11 +69,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      VITE_API_BASE_URL: ${WALLET_API_BASE_URL}
+      VITE_API_BASE_URL: http://localhost:${WALLET_API_PORT}
     depends_on:
       - wallet-api
     ports:
-      - "${CLIENT_PORT}:80"
+      - '${CLIENT_PORT}:80'
     networks:
       - wallet_net
 
