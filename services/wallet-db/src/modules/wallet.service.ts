@@ -29,7 +29,14 @@ export class WalletService {
    * - MAIL_TRANSPORT=smtp      → usa MailHog local
    */
   private async createTransport() {
-    if (process.env.MAIL_TRANSPORT === 'ethereal') {
+    const transport = String(process.env.MAIL_TRANSPORT || '').toLowerCase();
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = Number(process.env.SMTP_PORT || 0);
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+
+    if (transport === 'ethereal' && !smtpHost) {
       const acc = await nodemailer.createTestAccount();
       const transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -37,15 +44,19 @@ export class WalletService {
         secure: false,
         auth: { user: acc.user, pass: acc.pass },
       });
-      return { transporter, previewUrl: nodemailer.getTestMessageUrl };
+      const previewUrl = (info?: any): string | false =>
+        nodemailer.getTestMessageUrl(info as any);
+      return { transporter, previewUrl };
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAILHOG_HOST || '127.0.0.1',
-      port: Number(process.env.MAILHOG_PORT || 1025),
-      secure: false,
-    });
-    return { transporter, previewUrl: () => null };
+    const host = smtpHost || process.env.MAILHOG_HOST || '127.0.0.1';
+    const port = smtpPort || Number(process.env.MAILHOG_PORT || 1025);
+    const options: any = { host, port, secure: smtpSecure };
+    if (smtpUser && smtpPass) options.auth = { user: smtpUser, pass: smtpPass };
+    const transporter = nodemailer.createTransport(options);
+    // For non-ethereal SMTP there is no preview URL; return false with compatible signature
+    const previewUrl = (_info?: any): string | false => false;
+    return { transporter, previewUrl };
   }
 
   /** =======================
@@ -113,10 +124,13 @@ export class WalletService {
     const preview = previewUrl(info);
     if (preview) console.log('📧 Email Preview URL:', preview);
 
+    const expose = String(process.env.EXPOSE_TOKENS || '').toLowerCase() === 'true';
     return {
       success: true,
       sessionId,
       message: 'Token enviado por email',
+      ...(preview ? { previewUrl: preview } : {}),
+      ...(expose ? { debugToken: token6 } : {}),
     };
   }
 
@@ -163,6 +177,25 @@ export class WalletService {
       success: true,
       balanceCents: client.balanceCents,
     };
+  }
+
+  /** =======================
+   *  Listar clientes
+   *  ======================= */
+  async listClients() {
+    const docs = await this.clientModel
+      .find({}, { document: 1, name: 1, email: 1, phone: 1, balanceCents: 1, createdAt: 1, updatedAt: 1 })
+      .lean();
+    return docs.map((d: any) => ({
+      id: d._id?.toString?.() ?? undefined,
+      document: d.document,
+      name: d.name,
+      email: d.email,
+      phone: d.phone,
+      balanceCents: d.balanceCents,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+    }));
   }
 
   /** =======================

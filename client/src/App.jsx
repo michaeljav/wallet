@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const MAIL_VIEW_URL = import.meta.env.VITE_MAIL_VIEW_URL || '';
 
 // 🔔 Componente de alerta superior
 function AlertBar({ alert, onClose }) {
@@ -207,6 +208,21 @@ export default function App() {
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
           </div>
+          <div className="text-xs text-gray-600 mt-2">
+            Correos de prueba sugeridos:
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {['user1@wallet.test', 'user2@wallet.test', 'user3@wallet.test'].map((mail) => (
+                <button
+                  key={mail}
+                  type="button"
+                  className="px-2 py-1 rounded border hover:bg-gray-50"
+                  onClick={() => setForm({ ...form, email: mail })}
+                >
+                  {mail}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             className="btn btn-primary mt-3"
             onClick={() =>
@@ -308,17 +324,18 @@ export default function App() {
           >
             Iniciar Pago
           </button>
-          <p className="text-sm text-gray-500 mt-2">
-            Revisa MailHog en{' '}
-            <a
-              className="underline"
-              href="http://localhost:8025"
-              target="_blank"
-            >
-              http://localhost:8025
-            </a>{' '}
-            para ver el token.
-          </p>
+          {(MAIL_VIEW_URL || output?.previewUrl) && (
+            <p className="text-sm text-gray-500 mt-2">
+              Ver correo en{' '}
+              <a
+                className="underline"
+                href={MAIL_VIEW_URL || output?.previewUrl}
+                target="_blank"
+              >
+                {MAIL_VIEW_URL || 'preview'}
+              </a>
+            </p>
+          )}
         </section>
 
         {/* Confirmar pago */}
@@ -342,30 +359,13 @@ export default function App() {
               }
             />
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              className="btn btn-secondary"
-              onClick={async () => {
-                if (!confirm.sessionId.trim()) return showWarn('Ingresa sessionId');
-                try {
-                  const { data } = await axios.get(`${API}/payments/dev-token/${confirm.sessionId}`);
-                  setOutput(data);
-                  if (data?.data?.token6) {
-                    setConfirm({ ...confirm, token6: data.data.token6 });
-                    showOk('Token obtenido (solo dev)');
-                  } else {
-                    showWarn(data?.message || 'No se pudo obtener token');
-                  }
-                } catch (err) {
-                  const msg = err.response?.data?.message || err.message;
-                  showError(msg);
-                }
-              }}
-            >
-              Obtener token (dev)
-            </button>
-            <a className="underline text-sm" href="http://localhost:8025" target="_blank">Ver en MailHog</a>
-          </div>
+          {(MAIL_VIEW_URL || output?.previewUrl) && (
+            <div className="mt-2">
+              <a className="underline text-sm" href={MAIL_VIEW_URL || output?.previewUrl} target="_blank">
+                Ver correo
+              </a>
+            </div>
+          )}
           <button
             className="btn btn-primary mt-3"
             onClick={() =>

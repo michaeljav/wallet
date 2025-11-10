@@ -33,6 +33,12 @@ services:
     env_file: .env
     environment:
       MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/${MONGO_DB_NAME}?authSource=admin
+      MAIL_TRANSPORT: smtp
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_SECURE: ${SMTP_SECURE}
       MAILHOG_HOST: ${MAILHOG_HOST}
       MAILHOG_PORT: ${MAILHOG_PORT}
       MAIL_FROM: ${MAIL_FROM}
@@ -67,10 +73,11 @@ services:
       context: ./client
       args:
         VITE_API_BASE_URL: http://wallet-api:${WALLET_API_PORT}
+        VITE_MAIL_VIEW_URL: http://localhost:8025
     container_name: wallet-client
     restart: unless-stopped
     env_file: .env
-    # La app es estática (Nginx); la URL del API se inyecta en build args
+    # La app es estática (Nginx); la URL del API y el visor de correo se inyectan en build args
     depends_on:
       - wallet-api
     ports:

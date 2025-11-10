@@ -1,11 +1,11 @@
-### 1. Registrar nuevo cliente
+### 1. Registrar nuevo cliente (usa un correo de prueba)
 POST http://localhost:3000/clients/register
 Content-Type: application/json
 
 {
   "document": "02900161072",
   "name": "Michael",
-  "email": "michaeljaviermota@gmail.com",
+  "email": "user1@wallet.test",
   "phone": "8298657498"
 }
 
@@ -32,12 +32,12 @@ Content-Type: application/json
   "amountCents": 5000
 }
 
-### 4b. Obtener token (solo dev si EXPOSE_TOKENS=true)
-# Reemplaza {SESSION_ID} por el valor devuelto en "Iniciar pago"
-# GET http://localhost:3000/payments/dev-token/{SESSION_ID}
-GET http://localhost:3000/payments/dev-token/83f356df-4c90-4706-87cb-8d9b2bb7eb4e
 
-### 5. Confirmar pago (reemplaza con valores reales)
+### 4b. (Opcional para pruebas) Obtener token por API
+## Solo en desarrollo si EXPOSE_TOKENS=true. Usar si no quieres abrir el visor de correo.
+## Reemplaza {SESSION_ID} con el valor devuelto en el paso 4.
+## GET http://localhost:3000/payments/dev-token/{SESSION_ID}
+### 5. Confirmar pago (usar sessionId entregado y token del correo)
 POST http://localhost:3000/payments/confirm
 Content-Type: application/json
 
@@ -46,15 +46,19 @@ Content-Type: application/json
 #   "token6": "REEMPLAZAR_CON_TOKEN_EMAIL"
 # }
 {
-  "sessionId": "83f356df-4c90-4706-87cb-8d9b2bb7eb4e",
-  "token6": "193674"
+  "sessionId": "{SESSION_ID}",
+  "token6": "{TOKEN_6_DIGITOS}"
 }
 
 ### 6. Listar todos los clientes (si tu API lo permite)
 GET http://localhost:3001/clients
+
+### 6b. Listar clientes vía proxy API
+GET http://localhost:3000/clients
 
 ### 7. Prueba directa del servicio DB (si wallet-db expone health)
 GET http://localhost:3001/health
 
 ### 8. Health del API proxy
 GET http://localhost:3000/health
+

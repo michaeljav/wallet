@@ -65,6 +65,98 @@ export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:${WALLET_API_POR
 
 say "Usando MONGO_URI=$MONGO_URI"
 
+# Detecta si la URI incluye credenciales (modo con autenticación)
+HAS_MONGO_CREDS=false
+if [[ "${MONGO_URI:-}" == *"@"* ]]; then
+  HAS_MONGO_CREDS=true
+fi
+
+# Garantiza Mongo listo en 27017 según el modo (con o sin auth)
+ensure_mongo_ready() {
+  # ¿Ya hay algo escuchando en 27017?
+  if ( (command -v netstat >/dev/null 2>&1 && netstat -ano | tr -d '\r' | grep -q ':27017') \
+     || (command -v powershell.exe >/dev/null 2>&1 && powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port 27017 | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | grep -qi true) ); then
+    return 0
+  fi
+  command -v docker >/dev/null 2>&1 || { say "Docker no está disponible y no hay Mongo en 27017. Inícialo manualmente."; return 0; }
+  if $HAS_MONGO_CREDS; then
+    say "Levantando Mongo con autenticación (docker compose: servicio mongo)..."
+    if command -v docker-compose >/dev/null 2>&1; then
+      docker-compose up -d mongo >/dev/null 2>&1 || true
+    else
+      docker compose up -d mongo >/dev/null 2>&1 || true
+    fi
+  else
+    say "Levantando MongoDB dev (wallet-mongo-dev) sin autenticación..."
+    docker rm -f wallet-mongo-dev >/dev/null 2>&1 || true
+    docker run -d --name wallet-mongo-dev -p 27017:27017 mongo:7 >/dev/null 2>&1 || true
+  fi
+  sleep 2
+}
+# Mongo local: si no hay nada en 27017 y hay Docker, levanta contenedor wallet-mongo
+ensure_mongo() {
+  # ¿Ya hay algo escuchando en 27017?
+  if ( (command -v netstat >/dev/null 2>&1 && netstat -ano | tr -d '\r' | grep -q ':27017') \
+     || (command -v powershell.exe >/dev/null 2>&1 && powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port 27017 | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | grep -qi true) ); then
+    return 0
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    # Usamos un nombre distinto para no chocar con docker-compose (wallet-mongo)
+    say "Levantando MongoDB local (docker, contenedor: wallet-mongo-dev) sin autenticación..."
+    docker rm -f wallet-mongo-dev >/dev/null 2>&1 || true
+    docker run -d --name wallet-mongo-dev -p 27017:27017 mongo:7 >/dev/null 2>&1 || true
+    sleep 2
+  else
+    say "Aviso: no se detecta MongoDB en 27017 y no hay Docker disponible. Inícialo manualmente."
+  fi
+}
+
+ensure_mongo_ready || true
+
+# Si hay Mongo en 27017 proveniente de docker-compose (wallet-mongo con auth),
+# y MONGO_URI no trae credenciales, ajusta automáticamente usando .env si existe.
+if ( (command -v docker >/dev/null 2>&1) && docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^wallet-mongo$' ); then
+  if [[ -z "${MONGO_URI:-}" || "${MONGO_URI}" != *"@"* ]]; then
+    # Carga credenciales desde .env si existen
+    if [[ -f ./.env ]]; then
+      # shellcheck disable=SC1091
+      source ./.env
+    fi
+    u="${MONGO_INITDB_ROOT_USERNAME:-walletroot}"
+    p="${MONGO_INITDB_ROOT_PASSWORD:-walletpass}"
+    db="${MONGO_DB_NAME:-walletdb}"
+    export MONGO_URI="mongodb://${u}:${p}@localhost:27017/${db}?authSource=admin"
+    say "Detectado Mongo con autenticación (wallet-mongo). Ajustando MONGO_URI=$MONGO_URI"
+  fi
+fi
+
+# Opcional: SMTP unificado con MailHog si está disponible
+ensure_mailhog() {
+  if ( (command -v netstat >/dev/null 2>&1 && netstat -ano | tr -d '\r' | grep -q ':1025') \
+     || (command -v powershell.exe >/dev/null 2>&1 && powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port 1025 | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | grep -qi true) ); then
+    return 0
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    say "Levantando MailHog local (docker)..."
+    docker rm -f wallet-mailhog >/dev/null 2>&1 || true
+    docker run -d --name wallet-mailhog -p 1025:1025 -p 8025:8025 mailhog/mailhog:v1.0.1 >/dev/null 2>&1 || true
+    sleep 1
+  fi
+}
+
+ensure_mailhog || true
+if ( (command -v netstat >/dev/null 2>&1 && netstat -ano | tr -d '\r' | grep -q ':1025') \
+  || (command -v powershell.exe >/dev/null 2>&1 && powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port 1025 | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | grep -qi true) ); then
+  export MAIL_TRANSPORT="${MAIL_TRANSPORT:-smtp}"
+  export SMTP_HOST="${SMTP_HOST:-localhost}"
+  export SMTP_PORT="${SMTP_PORT:-1025}"
+  export SMTP_SECURE="${SMTP_SECURE:-false}"
+  export VITE_MAIL_VIEW_URL="${VITE_MAIL_VIEW_URL:-http://localhost:8025}"
+  say "SMTP local detectado en 1025; usando MailHog (vista: $VITE_MAIL_VIEW_URL)"
+else
+  say "No se detecta SMTP local en 1025; si MAIL_TRANSPORT=ethereal, se usará vista de preview"
+fi
+
 ensure_deps() {
   local dir="$1"
   cd "$dir"
@@ -85,6 +177,11 @@ start_wallet_db() {
   PORT="$WALLET_DB_PORT" \
   MONGO_URI="$MONGO_URI" \
   MAIL_TRANSPORT="$MAIL_TRANSPORT" \
+  SMTP_HOST="${SMTP_HOST:-}" \
+  SMTP_PORT="${SMTP_PORT:-}" \
+  SMTP_USER="${SMTP_USER:-}" \
+  SMTP_PASS="${SMTP_PASS:-}" \
+  SMTP_SECURE="${SMTP_SECURE:-}" \
   MAIL_FROM="$MAIL_FROM" \
   npm run start:dev >"$logdir/wallet-db.log" 2>&1 &
   pids+=("$!")
@@ -110,6 +207,9 @@ start_client() {
   if ! grep -q "VITE_API_BASE_URL" "$dir/.env.development" 2>/dev/null; then
     echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> "$dir/.env.development"
   fi
+  if ! grep -q "VITE_MAIL_VIEW_URL" "$dir/.env.development" 2>/dev/null && [[ -n "${VITE_MAIL_VIEW_URL}" ]]; then
+    echo "VITE_MAIL_VIEW_URL=$VITE_MAIL_VIEW_URL" >> "$dir/.env.development"
+  fi
   say "Iniciando client (Vite) en puerto $CLIENT_PORT..."
   cd "$dir"
   npm run dev -- --port "$CLIENT_PORT" --strictPort >"$logdir/client.log" 2>&1 &
@@ -122,10 +222,11 @@ start_wallet_api
 start_client
 
 say "Servicios levantados:"
-say "  MongoDB       : mongodb://localhost:27017 (debe estar corriendo local)"
+say "  MongoDB       : mongodb://localhost:27017 (auto: docker wallet-mongo si estaba ausente)"
 say "  wallet-db     : http://localhost:${WALLET_DB_PORT}"
 say "  wallet-api    : http://localhost:${WALLET_API_PORT}"
 say "  client (Vite) : http://localhost:${CLIENT_PORT}"
+say "  MailHog (UI)  : http://localhost:8025 (auto si había Docker)"
 
 say "Pruebas rápidas (otra terminal Git Bash):"
 cat <<'TESTS'

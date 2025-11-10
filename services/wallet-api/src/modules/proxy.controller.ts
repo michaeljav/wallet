@@ -48,4 +48,10 @@ export class ProxyController {
   devToken(@Param('sessionId') sessionId: string) {
     return axios.get(`${DB}/payments/dev-token/${sessionId}`).then((r) => r.data);
   }
+
+  @Get('clients')
+  @HttpCode(200)
+  clients() {
+    return axios.get(`${DB}/clients`).then((r) => r.data);
+  }
 }

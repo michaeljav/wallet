@@ -65,6 +65,16 @@ export class WalletController {
     }
   }
 
+  @Get('clients')
+  @HttpCode(200)
+  async clients() {
+    try {
+      return ok(await this.service.listClients(), 'Clientes');
+    } catch (e: any) {
+      return fail(e.message);
+    }
+  }
+
   @Get('health')
   @HttpCode(200)
   health() {

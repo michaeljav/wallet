@@ -47,3 +47,11 @@ Solución de problemas
 - Error "Command find requires authentication":
   - Asegúrate de usar `MONGO_URI` sin credenciales en local (ya ajustado en `.env.local`).
   - En Docker, Mongo usa autenticación y `wallet-db` se conecta con usuario/clave definidos en `.env`.
+
+Más detalles y pasos de prueba: ver `TESTING.md`.
+
+SMTP de desarrollo unificado (MailHog)
+- Docker: ya viene `mailhog` en `docker-compose.yml` (puertos 1025 SMTP y 8025 UI).
+- Local sin Docker: el script `start-all-without-docker.sh` detecta SMTP en 1025; si tienes Docker, levanta MailHog automáticamente y la UI mostrará “Ver correo”.
+- Correos de ejemplo recomendados para registrar usuarios: `user1@wallet.test`, `user2@wallet.test`, `user3@wallet.test` (también aparecen como atajos en el formulario de registro).
+- Producción: solo cambia `MAIL_TRANSPORT=smtp` y credenciales `SMTP_HOST/PORT/USER/PASS/SMTP_SECURE`. Desactiva `EXPOSE_TOKENS`.
