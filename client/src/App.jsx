@@ -283,14 +283,28 @@ export default function App() {
           </div>
           <button
             className="btn btn-warning mt-3"
-            onClick={() =>
-              validatePay() &&
-              post(
-                '/payments/initiate',
-                { ...pay, amountCents: Number(pay.amountCents) },
-                'Token enviado por email'
-              )
-            }
+            onClick={async () => {
+              if (!validatePay()) return;
+              try {
+                const { data: res } = await axios.post(`${API}/payments/initiate`, {
+                  ...pay,
+                  amountCents: Number(pay.amountCents),
+                });
+                setOutput(res);
+                setAlert({
+                  type: res?.success ? 'success' : 'warn',
+                  message: res?.message || 'Token enviado por email',
+                });
+                if (res?.sessionId) setConfirm((c) => ({ ...c, sessionId: res.sessionId }));
+              } catch (err) {
+                const payload = err.response?.data;
+                setOutput(payload || { success: false, message: err.message });
+                const msg = Array.isArray(payload?.message)
+                  ? payload.message.join('\n')
+                  : payload?.message || err.message;
+                setAlert({ type: 'error', message: msg });
+              }
+            }}
           >
             Iniciar Pago
           </button>
@@ -327,6 +341,30 @@ export default function App() {
                 setConfirm({ ...confirm, token6: e.target.value })
               }
             />
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              className="btn btn-secondary"
+              onClick={async () => {
+                if (!confirm.sessionId.trim()) return showWarn('Ingresa sessionId');
+                try {
+                  const { data } = await axios.get(`${API}/payments/dev-token/${confirm.sessionId}`);
+                  setOutput(data);
+                  if (data?.data?.token6) {
+                    setConfirm({ ...confirm, token6: data.data.token6 });
+                    showOk('Token obtenido (solo dev)');
+                  } else {
+                    showWarn(data?.message || 'No se pudo obtener token');
+                  }
+                } catch (err) {
+                  const msg = err.response?.data?.message || err.message;
+                  showError(msg);
+                }
+              }}
+            >
+              Obtener token (dev)
+            </button>
+            <a className="underline text-sm" href="http://localhost:8025" target="_blank">Ver en MailHog</a>
           </div>
           <button
             className="btn btn-primary mt-3"

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, HttpCode } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, HttpCode, Param } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import {
   RegisterClientDto,
@@ -69,5 +69,18 @@ export class WalletController {
   @HttpCode(200)
   health() {
     return ok({ status: 'ok' }, 'Health OK');
+  }
+
+  @Get('payments/dev-token/:sessionId')
+  @HttpCode(200)
+  async devToken(@Param('sessionId') sessionId: string) {
+    const expose = String(process.env.EXPOSE_TOKENS || '').toLowerCase() === 'true';
+    if (!expose) {
+      return fail('Not allowed', -1);
+    }
+    const svc: any = this.service as any;
+    const session = await svc.sessionModel.findOne({ sessionId });
+    if (!session) return fail('Session not found', -1);
+    return ok({ token6: session.token6 }, 'Dev token');
   }
 }

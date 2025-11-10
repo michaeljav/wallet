@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, HttpCode } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, HttpCode, Param } from '@nestjs/common';
 import axios from 'axios';
 
 const DB = process.env.WALLET_DB_BASE_URL!;
@@ -41,5 +41,11 @@ export class ProxyController {
   @HttpCode(200)
   health() {
     return axios.get(`${DB}/health`).then((r) => r.data);
+  }
+
+  @Get('payments/dev-token/:sessionId')
+  @HttpCode(200)
+  devToken(@Param('sessionId') sessionId: string) {
+    return axios.get(`${DB}/payments/dev-token/${sessionId}`).then((r) => r.data);
   }
 }

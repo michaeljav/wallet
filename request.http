@@ -32,13 +32,22 @@ Content-Type: application/json
   "amountCents": 5000
 }
 
+### 4b. Obtener token (solo dev si EXPOSE_TOKENS=true)
+# Reemplaza {SESSION_ID} por el valor devuelto en "Iniciar pago"
+# GET http://localhost:3000/payments/dev-token/{SESSION_ID}
+GET http://localhost:3000/payments/dev-token/83f356df-4c90-4706-87cb-8d9b2bb7eb4e
+
 ### 5. Confirmar pago (reemplaza con valores reales)
 POST http://localhost:3000/payments/confirm
 Content-Type: application/json
 
+# {
+#   "sessionId": "REEMPLAZAR_CON_ID_REAL",
+#   "token6": "REEMPLAZAR_CON_TOKEN_EMAIL"
+# }
 {
-  "sessionId": "REEMPLAZAR_CON_ID_REAL",
-  "token6": "REEMPLAZAR_CON_TOKEN_EMAIL"
+  "sessionId": "83f356df-4c90-4706-87cb-8d9b2bb7eb4e",
+  "token6": "193674"
 }
 
 ### 6. Listar todos los clientes (si tu API lo permite)

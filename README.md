@@ -24,6 +24,10 @@ Con Docker
 - Notas:
   - El cliente se construye con `VITE_API_BASE_URL=http://wallet-api:3000` para resolver dentro de la red de Docker (ajustado en `docker-compose.yml`).
   - Para probar desde host: usa `http://localhost:3000` para el API.
+  - Emails de token:
+    - Local sin Docker (`MAIL_TRANSPORT=ethereal`): revisa el log de wallet-db y abre la "Email Preview URL".
+    - Con Docker (`MAIL_TRANSPORT=smtp` a MailHog): abre http://localhost:8025 para ver el correo.
+    - Desarrollo: si `EXPOSE_TOKENS=true`, puedes consultar `GET /payments/dev-token/{sessionId}` para obtener el token temporalmente.
 
 Pruebas rápidas
 - Registro:
@@ -32,6 +36,12 @@ Pruebas rápidas
   - `curl -i -X POST http://localhost:3000/wallet/topup -H "Content-Type: application/json" -d '{"document":"02900161072","phone":"8298657498","amountCents":10000}'`
 - Consulta saldo:
   - `curl -s "http://localhost:3000/wallet/balance?document=02900161072&phone=8298657498"`
+
+Uso del token (fácil para cualquier usuario)
+- En la UI web (cliente):
+  - Al iniciar pago, el `sessionId` se autollenará en el formulario de confirmación.
+  - Botón "Obtener token (dev)" rellena el `token6` automáticamente cuando `EXPOSE_TOKENS=true`.
+  - En Docker puedes ver el correo en MailHog `http://localhost:8025`.
 
 Solución de problemas
 - Error "Command find requires authentication":
