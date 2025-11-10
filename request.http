@@ -1,0 +1,51 @@
+### 1. Registrar nuevo cliente
+POST http://localhost:3000/clients/register
+Content-Type: application/json
+
+{
+  "document": "02900161072",
+  "name": "Michael",
+  "email": "michaeljaviermota@gmail.com",
+  "phone": "8298657498"
+}
+
+### 2. Recargar saldo (Top-up)
+POST http://localhost:3000/wallet/topup
+Content-Type: application/json
+
+{
+  "document": "02900161072",
+  "phone": "8298657498",
+  "amountCents": 10000
+}
+
+### 3. Consultar balance actual
+GET http://localhost:3000/wallet/balance?document=02900161072&phone=8298657498
+
+### 4. Iniciar pago (crea token y sesión)
+POST http://localhost:3000/payments/initiate
+Content-Type: application/json
+
+{
+  "document": "02900161072",
+  "phone": "8298657498",
+  "amountCents": 5000
+}
+
+### 5. Confirmar pago (reemplaza con valores reales)
+POST http://localhost:3000/payments/confirm
+Content-Type: application/json
+
+{
+  "sessionId": "REEMPLAZAR_CON_ID_REAL",
+  "token6": "REEMPLAZAR_CON_TOKEN_EMAIL"
+}
+
+### 6. Listar todos los clientes (si tu API lo permite)
+GET http://localhost:3001/clients
+
+### 7. Prueba directa del servicio DB (si wallet-db expone health)
+GET http://localhost:3001/health
+
+### 8. Health del API proxy
+GET http://localhost:3000/health

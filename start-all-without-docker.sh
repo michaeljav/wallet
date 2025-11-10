@@ -44,6 +44,15 @@ if ! ( (command -v netstat >/dev/null 2>&1 && netstat -ano | tr -d '\r' | grep -
   say "Aviso: no se detecta MongoDB escuchando en 27017. Inícialo antes de probar las APIs."
 fi
 
+# Cargar variables locales si existen (toman prioridad)
+if [[ -f ./.env.local ]]; then
+  say "Cargando variables de .env.local"
+  set -a
+  # shellcheck disable=SC1091
+  source ./.env.local
+  set +a
+fi
+
 # Variables de entorno por defecto
 export WALLET_DB_PORT="${WALLET_DB_PORT:-3001}"
 export WALLET_API_PORT="${WALLET_API_PORT:-3000}"
@@ -53,6 +62,8 @@ export MAIL_TRANSPORT="${MAIL_TRANSPORT:-ethereal}"
 export MAIL_FROM="${MAIL_FROM:-no-reply@wallet.local}"
 export WALLET_DB_BASE_URL="${WALLET_DB_BASE_URL:-http://localhost:${WALLET_DB_PORT}}"
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:${WALLET_API_PORT}}"
+
+say "Usando MONGO_URI=$MONGO_URI"
 
 ensure_deps() {
   local dir="$1"
