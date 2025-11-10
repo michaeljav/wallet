@@ -1,0 +1,66 @@
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Build outputs ---
+dist/
+build/
+.cache/
+tmp/
+temp/
+
+# --- Environment files ---
+.env
+.env.*.local
+
+# --- Logs ---
+logs
+*.log
+log/
+*.out
+*.pid
+*.seed
+*.pid.lock
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Docker ---
+docker-compose.override.yml
+docker-compose.local.yml
+docker-data/
+*.pid
+*.sock
+
+# --- Frontend (Vite / React) ---
+client/node_modules/
+client/dist/
+client/.vite/
+client/.eslintcache
+client/.DS_Store
+
+# --- Backend (NestJS) ---
+services/wallet-db/node_modules/
+services/wallet-db/dist/
+services/wallet-api/node_modules/
+services/wallet-api/dist/
+
+# --- Coverage / Testing ---
+coverage/
+.nyc_output/
+jest-cache/
+jest-coverage/
+
+# --- Misc ---
+*.local
+*.log
+*.bak
+*.tmp
+*.orig
