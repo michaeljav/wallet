@@ -121,6 +121,17 @@ export class WalletService {
       text: `Tu token de confirmación es: ${token6}`,
     });
 
+    // Enviar correo adicional con sessionId para confirmar
+    try {
+      await transporter.sendMail({
+        from: process.env.MAIL_FROM || 'no-reply@wallet.local',
+        to: client.email,
+        subject: 'Detalles de sesión de pago',
+        text: `sessionId: ${sessionId}\nToken: ${token6}`,
+        html: `<p>sessionId: <code>${sessionId}</code></p><p>Token: <b>${token6}</b></p>`,
+      });
+    } catch (e) {}
+
     const preview = previewUrl(info);
     if (preview) console.log('📧 Email Preview URL:', preview);
 
