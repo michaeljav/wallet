@@ -208,7 +208,7 @@ export default function App() {
             />
           </div>
           <button
-            className="btn mt-3"
+            className="btn btn-primary mt-3"
             onClick={() =>
               validateRegister() &&
               post('/clients/register', form, 'Cliente registrado')
@@ -244,7 +244,7 @@ export default function App() {
             />
           </div>
           <button
-            className="btn mt-3"
+            className="btn btn-success mt-3"
             onClick={() =>
               validateTopup() &&
               post(
@@ -282,7 +282,7 @@ export default function App() {
             />
           </div>
           <button
-            className="btn mt-3"
+            className="btn btn-warning mt-3"
             onClick={() =>
               validatePay() &&
               post(
@@ -329,7 +329,7 @@ export default function App() {
             />
           </div>
           <button
-            className="btn mt-3"
+            className="btn btn-primary mt-3"
             onClick={() =>
               validateConfirm() &&
               post('/payments/confirm', confirm, 'Pago confirmado')
@@ -361,7 +361,7 @@ export default function App() {
             />
           </div>
           <button
-            className="btn mt-3"
+            className="btn btn-secondary mt-3"
             onClick={() =>
               validateBalance() &&
               get('/wallet/balance', balanceQ, 'Saldo consultado')
@@ -379,11 +379,7 @@ export default function App() {
           </pre>
         </section>
 
-        {/* estilos utilitarios */}
-        <style>{`
-          .input { @apply border rounded px-2 py-1 w-full; }
-          .btn { @apply bg-black text-white rounded px-3 py-2 hover:opacity-80; }
-        `}</style>
+        {/* estilos utilitarios definidos en index.css (Tailwind @apply) */}
       </div>
     </div>
   );
