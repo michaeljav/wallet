@@ -59,7 +59,7 @@ jest-cache/
 jest-coverage/
 
 # --- Misc ---
-*.local
+# *.local
 *.log
 *.bak
 *.tmp
