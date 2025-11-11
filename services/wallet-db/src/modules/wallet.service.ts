@@ -63,13 +63,19 @@ export class WalletService {
    *  Registrar un nuevo cliente
    *  ======================= */
   async registerClient(dto: RegisterClientDto) {
+    const norm = (s: any) => String(s || '').replace(/\D+/g, '');
+    const doc = String(dto.document || '').trim();
+    const phone = norm(dto.phone);
     const exists = await this.clientModel.findOne({
-      $or: [{ document: dto.document }, { email: dto.email }],
+      $or: [{ document: doc }, { email: dto.email }],
     });
     if (exists) throw new Error('Client already exists');
 
     const created = await this.clientModel.create({
-      ...dto,
+      document: doc,
+      name: dto.name,
+      email: dto.email,
+      phone,
       balanceCents: 0,
     });
 
@@ -213,6 +219,9 @@ export class WalletService {
    *  Buscar cliente
    *  ======================= */
   private async findByDocumentPhone(document: string, phone: string) {
-    return this.clientModel.findOne({ document, phone });
+    const norm = (s: any) => String(s || '').replace(/\D+/g, '');
+    const doc = String(document || '').trim();
+    const ph = norm(phone);
+    return this.clientModel.findOne({ document: doc, phone: ph });
   }
 }

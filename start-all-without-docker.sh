@@ -71,6 +71,37 @@ if [[ "${MONGO_URI:-}" == *"@"* ]]; then
   HAS_MONGO_CREDS=true
 fi
 
+# Utilidades mínimas
+port_listening() {
+  local port="$1"
+  if (command -v netstat >/dev/null 2>&1) && netstat -ano 2>/dev/null | tr -d '\r' | grep -q ":${port}"; then
+    return 0
+  fi
+  if (command -v powershell.exe >/dev/null 2>&1); then
+    local ok
+    ok=$(powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port ${port} | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | tr 'A-Z' 'a-z')
+    [[ "$ok" == *true* ]] && return 0
+  fi
+  return 1
+}
+
+docker_has() {
+  local name="$1"
+  command -v docker >/dev/null 2>&1 || return 1
+  docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${name}$"
+}
+
+# Si se usan credenciales y el puerto ya está ocupado por un mongod ajeno a Docker, abortar
+if $HAS_MONGO_CREDS && port_listening 27017 && ! docker_has wallet-mongo && ! docker_has wallet-mongo-auth; then
+  fail "Puerto 27017 en uso por un proceso externo. Detén tu mongod local o cambia MONGO_URI (sin credenciales)."
+fi
+
+# Detecta si la URI incluye credenciales (modo con autenticación)
+HAS_MONGO_CREDS=false
+if [[ "${MONGO_URI:-}" == *"@"* ]]; then
+  HAS_MONGO_CREDS=true
+fi
+
 # Garantiza Mongo listo en 27017 según el modo (con o sin auth)
 ensure_mongo_ready() {
   # ¿Ya hay algo escuchando en 27017?
@@ -81,10 +112,28 @@ ensure_mongo_ready() {
   command -v docker >/dev/null 2>&1 || { say "Docker no está disponible y no hay Mongo en 27017. Inícialo manualmente."; return 0; }
   if $HAS_MONGO_CREDS; then
     say "Levantando Mongo con autenticación (docker compose: servicio mongo)..."
+    local compose_ok=false
     if command -v docker-compose >/dev/null 2>&1; then
-      docker-compose up -d mongo >/dev/null 2>&1 || true
-    else
-      docker compose up -d mongo >/dev/null 2>&1 || true
+      docker-compose up -d mongo && compose_ok=true || compose_ok=false
+    elif docker compose version >/dev/null 2>&1; then
+      docker compose up -d mongo && compose_ok=true || compose_ok=false
+    fi
+    # Espera breve y verifica puerto
+    sleep 2
+    if ! ( (command -v netstat >/dev/null 2>&1 && netstat -ano 2>/dev/null | tr -d '\r' | grep -q ':27017') \
+       || (command -v powershell.exe >/dev/null 2>&1 && powershell.exe -NoProfile -Command "Test-NetConnection -ComputerName localhost -Port 27017 | Select-Object -ExpandProperty TcpTestSucceeded" | tr -d '\r' | grep -qi true) ); then
+      # Fallback: levantar contenedor ad‑hoc con auth si compose falló o no está
+      say "No se detecta Mongo en 27017 tras 'compose up'. Iniciando contenedor ad-hoc con autenticación (wallet-mongo-auth)..."
+      # Cargar posibles credenciales desde .env si existen
+      if [[ -f ./.env ]]; then
+        # shellcheck disable=SC1091
+        source ./.env
+      fi
+      local u="${MONGO_INITDB_ROOT_USERNAME:-walletroot}"
+      local p="${MONGO_INITDB_ROOT_PASSWORD:-walletpass}"
+      docker rm -f wallet-mongo-auth >/dev/null 2>&1 || true
+      docker run -d --name wallet-mongo-auth -e MONGO_INITDB_ROOT_USERNAME="$u" -e MONGO_INITDB_ROOT_PASSWORD="$p" -p 27017:27017 mongo:7 >/dev/null 2>&1 || true
+      sleep 2
     fi
   else
     say "Levantando MongoDB dev (wallet-mongo-dev) sin autenticación..."
