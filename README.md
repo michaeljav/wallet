@@ -1,19 +1,5 @@
 Guía rápida: levantar con y sin Docker
 
-Sin Docker (desarrollo local)
-
-- Requisitos: Node 18+, npm, MongoDB local en 27017 sin autenticación.
-- Dar permisos y ejecutar:
-  - `chmod +x start-all-without-docker.sh`
-  - `./start-all-without-docker.sh`
-- Variables locales relevantes (`.env.local` en la raíz):
-  - `MONGO_URI=mongodb://localhost:27017/walletdb` (sin auth para local)
-  - `VITE_API_BASE_URL=http://localhost:3000`
-- Endpoints:
-  - API proxy: `http://localhost:3000`
-  - DB API: `http://localhost:3001`
-  - Cliente (Vite): `http://localhost:5173`
-
 Con Docker
 
 - Requisitos: Docker y Docker Compose.
@@ -30,6 +16,20 @@ Con Docker
     - Local sin Docker (`MAIL_TRANSPORT=ethereal`): revisa el log de wallet-db y abre la "Email Preview URL".
     - Con Docker (`MAIL_TRANSPORT=smtp` a MailHog): abre http://localhost:8025 para ver el correo.
     - Desarrollo: si `EXPOSE_TOKENS=true`, puedes consultar `GET /payments/dev-token/{sessionId}` para obtener el token temporalmente.
+
+Sin Docker (desarrollo local)
+
+- Requisitos: Node 18+, npm, MongoDB local en 27017 sin autenticación.
+- Dar permisos y ejecutar:
+  - `chmod +x start-all-without-docker.sh`
+  - `./start-all-without-docker.sh`
+- Variables locales relevantes (`.env.local` en la raíz):
+  - `MONGO_URI=mongodb://localhost:27017/walletdb` (sin auth para local)
+  - `VITE_API_BASE_URL=http://localhost:3000`
+- Endpoints:
+  - API proxy: `http://localhost:3000`
+  - DB API: `http://localhost:3001`
+  - Cliente (Vite): `http://localhost:5173`
 
 Pruebas rápidas
 
