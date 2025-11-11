@@ -10,7 +10,7 @@ Con Docker
   - wallet-api: `http://wallet-api:3000`
   - client (Nginx): expuesto en `http://localhost:5173`
 - Notas:
-  - El cliente se construye con `VITE_API_BASE_URL=http://wallet-api:3000` para resolver dentro de la red de Docker (ajustado en `docker-compose.yml`).
+  - El cliente se construye con `VITE_API_BASE_URL=http://localhost:3000` para resolver dentro de la red de Docker (ajustado en `docker-compose.yml`).
   - Para probar desde host: usa `http://localhost:3000` para el API.
   - Emails de token:
     - Local sin Docker (`MAIL_TRANSPORT=ethereal`): revisa el log de wallet-db y abre la "Email Preview URL".
@@ -19,12 +19,15 @@ Con Docker
 
 Sin Docker (desarrollo local)
 
-- Requisitos: Node 18+, npm, MongoDB local en 27017 sin autenticaci√≥n.
+- Requisitos: Node 18+, npm, Docker (opcional para crear Mongo y MailHog autom·ticamente).
 - Dar permisos y ejecutar:
   - `chmod +x start-all-without-docker.sh`
   - `./start-all-without-docker.sh`
-- Variables locales relevantes (`.env.local` en la ra√≠z):
-  - `MONGO_URI=mongodb://localhost:27017/walletdb` (sin auth para local)
+- Variables locales relevantes (`.env.local` en la raÌz):
+  - Modo con autenticaciÛn (usa Mongo de docker compose):
+    - `MONGO_URI=mongodb://walletroot:walletpass@localhost:27017/walletdb?authSource=admin`
+  - Modo sin autenticaciÛn (Mongo dev ad-hoc):
+    - `MONGO_URI=mongodb://localhost:27017/walletdb`
   - `VITE_API_BASE_URL=http://localhost:3000`
 - Endpoints:
   - API proxy: `http://localhost:3000`
@@ -69,3 +72,4 @@ SMTP de desarrollo unificado (MailHog)
 
 ![Vista previa de la aplicaci√≥n mongodb](images_screens/mongodb.png)
 ![Vista previa de la aplicaci√≥n mongodb](images_screens/mongodb2.png)
+
